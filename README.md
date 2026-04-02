@@ -171,3 +171,6 @@ Password for 'https://ldryong1008-coder@github.com':
 기술 문서: README.md (본 문서)
 
 포트 매핑 확인: http://localhost:8080 <img width="2624" height="2192" alt="image" src="https://github.com/user-attachments/assets/a584f651-a0f4-4736-b8fb-694f93ddbf26" />
+
+
+포트/볼륨 재현 설정: Dockerfile에 COPY 명령을 명시하고, 실행 시 -p(포트)와 -v(볼륨) 옵션을 표준화하여 기록했습니다. 이를 통해 어떤 환경에서도 동일한 명령어로 서비스 복구가 가능하도록 설계했습니다.
