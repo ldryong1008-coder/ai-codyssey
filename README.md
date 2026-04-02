@@ -66,6 +66,14 @@ Docker version 28.5.2, build ecc6942
 % docker run hello-world
 Hello from Docker!
 
+% docker images
+REPOSITORY    TAG       IMAGE ID       CREATED        SIZE
+my-web        1.0       945992038191   2 hours ago    62.2MB
+nginx         alpine    d5030d429039   8 days ago     62.2MB
+hello-world   latest    e2ac70e7319a   9 days ago     10.1kB
+ubuntu        latest    f794f40ddfff   5 weeks ago    78.1MB
+alpine        latest    a40c03cbb81c   2 months ago   8.44MB
+
 % docker ps -a
 CONTAINER ID   IMAGE          STATUS                     PORTS                    NAMES
 20218c16fe90   nginx:alpine   Up 2 minutes               0.0.0.0:8081->80/tcp     mount-test
