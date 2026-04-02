@@ -1,379 +1,347 @@
-프로젝트 개요
-
-미션 목표: 보안 정책상 sudo 권한이 제한된 서울캠퍼스 환경에서 OrbStack을 활용하여 Docker 가상 환경을 구축하고, 컨테이너 운영 및 데이터 영속성을 검증한다.
-핵심 학습: 터미널 명령어, 파일 권한(chmod), Dockerfile 빌드, 포트 매핑, 볼륨 관리, Git/GitHub 연동.
-
-
----
-## 1) 실행 환경
-OS: macOS (Apple Silicon/Intel)
-
-Container Runtime: OrbStack (Docker Desktop Alternative)
-
-Shell: zsh
-
-Docker Version: 28.5.2
-
-Git Version: 2.53.0
-
----
-## 2) 수행 항목 체크리스트
-
-[0] 터미널 기본 조작 및 폴더 구성
-
-[0] 권한 변경 실습 (파일 및 디렉토리)
-
-[0] Docker 설치 및 데몬 점검 (OrbStack 활용)
-
-[0] hello-world 및 ubuntu 컨테이너 실행
-
-[0] Dockerfile 기반 커스텀 이미지 빌드/실행
-
-[0] 포트 매핑 접속 및 브라우저 검증 (8080, 8081)
-
-[0] 바인드 마운트 반영 (실시간 소스 수정)
-
-[0] Docker 볼륨 영속성 검증 (데이터 복구 확인)
-
-[0] Git 설정 + GitHub 강제 연동 완료
-
----
-## 3) 수행로그(발췌)
----
-1.터미널 조작 및 권한 변경
-
-% pwd
-
-
-/Users/ldryong10097422
-
-
-% mkdir -p ~/orbstack-project && cd ~/orbstack-project
-
-
-% touch test.txt && echo "hello OrbStack" > test.txt
-
-
-% ls -l test.txt
-
-
--rw-r--r--  1 ldryong10097422  ldryong10097422  15 Apr  2 18:03 test.txt
-
-
-% chmod 644 test.txt
-
-
-% ls -l test.txt
-
-
--rw-r--r--  1 ldryong10097422  ldryong10097422  15 Apr  2 18:03 test.txt
-
-
----
-2.Docker 설치 및 컨테이너 운영
-
-
-% docker --version
-
-
-Docker version 28.5.2, build ecc6942
-
-
-% docker run hello-world
-
-
-Hello from Docker!
-
-
-% docker images
-
-
-REPOSITORY    TAG       IMAGE ID       CREATED        SIZE
-
-
-my-web        1.0       945992038191   2 hours ago    62.2MB
-
-
-nginx         alpine    d5030d429039   8 days ago     62.2MB
-
-
-hello-world   latest    e2ac70e7319a   9 days ago     10.1kB
-
-
-ubuntu        latest    f794f40ddfff   5 weeks ago    78.1MB
-
-
-alpine        latest    a40c03cbb81c   2 months ago   8.44MB
-
-
-% docker ps -a
-CONTAINER ID   IMAGE          STATUS                     PORTS                    NAMES
-
-
-20218c16fe90   nginx:alpine   Up 2 minutes               0.0.0.0:8081->80/tcp     mount-test
-
-
-59c21525d392   my-web:1.0     Exited (255) 7 minutes ago 0.0.0.0:8080->80/tcp     my-web-container
-
-
-704fc1907169   ubuntu         Exited (0) 18 minutes ago                           my-ubuntu
-
-
-
----
-3.Dockerfile 커스텀 및 빌드
-
-
-% cat <<EOF > Dockerfile
-
-
-FROM nginx:alpine
-
-
-COPY ./app/index.html /usr/share/nginx/html/index.html
-
-
-EOF
-
-
-
-FROM nginx:alpine
-
-
-COPY ./app/index.html /usr/share/nginx/html/index.html
-
-
-
-
-% docker build -t my-web:1.0 .
-
-
-% docker run -d -p 8080:80 --name my-web-container my-web:1.0
-
-
-59c21525d39227b12a62698a4470a59a95ce23369d7ae8918817fd960105900d(정상실행)
-
-
----
-4.볼륨 영속성 검증
-
-
-% docker run -d -p 8081:80 --name mount-test -v $(pwd)/app:/usr/share/nginx/html nginx:alpine
-
-
-% docker volume create my-data-vol
-
-
-% docker run -d --name vol-tester -v my-data-vol:/app/data alpine sleep infinity
-
-
-% docker exec vol-tester sh -c "echo 'This data survives power off!' > /app/data/hello.txt"
-
-
-% docker rm -f vol-tester
-
-
-% docker run -d --name vol-tester-new -v my-data-vol:/app/data alpine sleep infinity
-
-
-% docker exec vol-tester-new cat /app/data/hello.txt
-
-
-This data survives power off!
-
-
----
-## 4)트러블슈팅 (2건)
----
-
-
-1.작업 중 호스트 재부팅으로 인한 컨테이너 중단
-
-
-문제: docker ps -a 확인 시 컨테이너가 Exited (255) 상태로 멈춰 있음.
-
-
-원인 가설: 맥 전원 종료(또는 세션 복구) 과정에서 OrbStack 데몬이 비정상 종료됨.
-
-
-확인: STATUS가 Exited (255) 7 minutes ago인 것을 확인.
-
-
-해결: OrbStack 재실행 후 기존 컨테이너를 삭제하고, 바인드 마운트 등 필요한 컨테이너를 재구동하여 복구함.
-
-
----
-2.Git Push 시 버전 충돌(non-fast-forward) 발생
-
-
-문제: GitHub 원격 저장소에 푸시 시 ! [rejected] main -> main 에러 발생.
-
-
-원인 가설: GitHub 생성 시 자동 생성된 파일과 로컬 파일 간의 충돌(add/add) 및 히스토리 불일치.
-
-
-확인: git pull --rebase 시 Dockerfile에서 컨플릭트 발생 확인.
-
-
-해결: 과제 초기 환경이므로 로컬 작업물을 최종본으로 강제 반영하기 위해 git push origin main --force를 사용하여 해결함.
-
-
----
-## 5)검증 증거
----
-GitHub Repository: https://github.com/ldryong1008-coder/ai-codyssey.git
-
-
-% git config --global user.name "ldryong1008-coder 
-
-
-dquote> git config --global user.email "ldryong1009@gmail.com"
-
-
-dquote> git config --global init.defaultBranch main
-
-
-dquote> 
-
-
-ldryong10097422@c4r7s8 orbstack-project % git config --global user.name "ldryong1008-coder"
-
-
-ldryong10097422@c4r7s8 orbstack-project % git config --global user.email "ldryong1009@gmail.com"
-
-
-ldryong10097422@c4r7s8 orbstack-project % git config --global init.defaultBranch main
-
-
-ldryong10097422@c4r7s8 orbstack-project % git config --list
-
-
-credential.helper=osxkeychain
-
-
-user.name=ldryong1008-coder
-
-
-user.email=ldryong1009@gmail.com
-
-
-init.defaultbranch=main
-
-
-ldryong10097422@c4r7s8 orbstack-project % git init
-
-
-Initialized empty Git repository in /Users/ldryong10097422/orbstack-project/.git/
-
-
-ldryong10097422@c4r7s8 orbstack-project % git add .
-
-
-ldryong10097422@c4r7s8 orbstack-project % git commit -m "Complete Docker & OrbStack Assignment"
-
-
-[main (root-commit) 78e1bc5] Complete Docker & OrbStack Assignment
-
-
-
-% git push -u origin main
-
-
-Username for 'https://github.com': ldryong1008-coder
-
-
-Password for 'https://ldryong1008-coder@github.com': 
-
-
-3 files changed, 4 insertions(+)
-
- 
- create mode 100644 Dockerfile
- 
- 
- create mode 100644 app/index.html
- 
- 
- create mode 100644 test.txt
-
-
-
-기술 문서: README.md (본 문서)
-
-
-포트 매핑 확인: http://localhost:8080 <img width="2624" height="2192" alt="image" src="https://github.com/user-attachments/assets/a584f651-a0f4-4736-b8fb-694f93ddbf26" />
-
-
-동작 구조 설계 및 경로 선택
-
-
-디렉토리 구성 기준: 프로젝트의 독립성과 재현성을 위해 ~/orbstack-project라는 루트 폴더를 생성했습니다. 하위에 app/ 폴더를 두어 소스 코드(HTML)와 인프라 설정 파일(Dockerfile)을 분리함으로써 관리 효율성을 높였습니다.
-
-
-포트/볼륨 재현 설정: Dockerfile에 COPY 명령을 명시하고, 실행 시 -p(포트)와 -v(볼륨) 옵션을 표준화하여 기록했습니다. 이를 통해 어떤 환경에서도 동일한 명령어로 서비스 복구가 가능하도록 설계했습니다.
-
-
-절대 경로 vs 상대 경로: 
-
-
-상대 경로: Dockerfile 빌드 시(COPY ./app ...)처럼 프로젝트 폴더 내부 자원을 참조할 때 사용합니다.
-
-
-절대 경로: Docker 바인드 마운트(-v $(pwd)/app:...) 시에는 호스트 시스템의 정확한 위치를 컨테이너에 매핑해야 하므로 절대 경로를 사용합니다.
-
-
-
-
-이미지와 컨테이너의 차이 (빌드/실행/변경)
-
-
-이미지(Image): 서비스 운영에 필요한 모든 파일과 설정을 담은 '읽기 전용(Read-only)' 템플릿입니다. (빌드 단계)
-
-
-컨테이너(Container): 이미지를 실행한 **'상태'**입니다. 이미지라는 설계도 위에 쓰기 가능한 계층(Layer)이 추가된 형태입니다. (실행 단계)
-
-
-차이점: 이미지는 한 번 빌드되면 변경할 수 없지만(Immutable), 컨테이너는 실행 중에 데이터를 생성하거나 변경할 수 있습니다. 다만 컨테이너 삭제 시 변경분은 사라집니다. (변경 관점)
-
-
-
-포트 매핑의 원리와 진단
-
-
-포트 매핑이 필요한 이유: 컨테이너는 격리된 네트워크 환경을 가집니다. 외부(호스트/브라우저)에서 컨테이너 내부 서비스에 접근하려면 호스트의 특정 문(Port)과 컨테이너의 문을 연결해주는 통로가 반드시 필요합니다.
-
-
-포트 충돌 진단 순서:
-
-
-1.  docker ps로 이미 해당 포트를 쓰는 컨테이너가 있는지 확인.
-
-
-2.  lsof -i :[포트번호] 명령어로 호스트의 다른 프로세스가 포트를 점유 중인지 진단.
-
-
-3.  점유 중인 프로세스 종료 또는 docker run -p [새포트]:80과 같이 호스트 포트를 변경하여 실행.
-
-
-
-
-파일 권한 숫자 표기 규칙 (chmod)
-
-
-권한 규칙: 읽기(4), 쓰기(2), 실행(1)의 합으로 결정됩니다.
-
-
-755 (rwxr-xr-x): 소유자(4+2+1=7), 그룹(4+1=5), 기타(4+1=5). 실행 파일이나 디렉토리에 주로 사용.
-
-
-644 (rw-r--r--): 소유자(4+2=6), 그룹(4), 기타(4). 일반적인 설정 파일이나 텍스트 파일에 사용.
-
-
-
-데이터 영속성 대안 (Data Persistence)
-
-
-문제 상황: 컨테이너 삭제 시 내부에 저장된 DB 데이터나 로그가 함께 소멸하는 위험이 있습니다.
-
-
-대안 (Volume): 이를 방지하기 위해 호스트의 파일 시스템과 독립된 Docker Volume을 생성하여 연결합니다. 컨테이너를 수천 번 삭제해도 데이터는 호스트의 안전한 영역에 보관되어 새 컨테이너 연결 시 즉시 복구됩니다.
+아래는 과제 요구사항을 모두 반영한 제출용 README 템플릿입니다. 그대로 복사해 시작하시고, TODO/TBD/<> 항목을 채워 주세요. 필요 시 섹션을 추가/삭제해도 됩니다.
+
+------------------------------------------------------------
+# 개발 워크스테이션 구축 (Submission README)
+
+본 저장소는 터미널 기반으로 개발 워크스테이션을 구축하고, Docker·Git·포트 매핑·마운트/볼륨 등을 실습한 전 과정을 재현 가능하게 기록합니다. 이 문서 하나(README)만으로 모든 증거(명령+출력+스크린샷)를 확인할 수 있습니다.
+
+- 저장소 링크: <GitHub Repository URL 입력>
+- 평가자는 이 README 순서대로 따라 하면 동일한 결과를 재현할 수 있습니다.
+
+목차
+- 1. 프로젝트 개요
+- 2. 실행 환경
+- 3. 수행 항목 체크리스트
+- 4. 빠른 검증 가이드(평가자용)
+- 5. 검증 방법 및 증거 링크
+- 6. 터미널 조작 로그
+- 7. 권한 실습(파일/디렉토리)
+- 8. Docker 설치 및 기본 점검 로그
+- 9. Docker 기본 운영 명령 로그
+- 10. 컨테이너 실행 실습
+- 11. 커스텀 이미지 제작(Dockerfile)
+- 12. 포트 매핑 및 접속 증거
+- 13. 바인드 마운트 및 볼륨 영속성 검증
+- 14. Git 설정 및 GitHub/VSCode 연동 증거
+- 15. 트러블슈팅(2건 이상)
+- 16. 학습 목표 설명(개념 정리)
+- 17. 보안·개인정보 보호
+- 18. 재현성 및 주의사항
+- 19. 부록(명령 모음)
+
+1. 프로젝트 개요
+- 미션 목표: 터미널 기반으로 Docker 환경을 구성·운영하고, Dockerfile로 커스텀 이미지를 만들며, 포트 매핑·바인드 마운트·볼륨을 통해 동작과 영속성을 검증한다. Git/GitHub로 이력을 관리하고, 기술 문서만으로 재현 가능한 증거를 남긴다.
+- 선택 베이스:
+  - 옵션 A: 웹 서버 베이스(NGINX/Apache 등) + 정적 콘텐츠/설정 교체
+  - 옵션 B: Linux 베이스(Ubuntu/Alpine 등) + 패키지/유저/ENV/헬스체크 추가
+- 내가 선택한 옵션: <A 또는 B> / 베이스 이미지: <예: nginx:alpine>
+
+2. 실행 환경
+- OS: <예: macOS 14.x / Windows 11 / Ubuntu 22.04>
+- Shell/Terminal: <예: zsh(iTerm2), PowerShell, bash>
+- Docker Engine/CLI: <docker --version 결과>
+- Docker Backend: <예: OrbStack / Docker Desktop>
+- Git: <git --version 결과>
+- 기타: <VSCode 버전, Browser 등>
+- 제약/전제: sudo 제한 환경 -> OrbStack으로 Docker 엔진 구동(필요 시 대체 안내 포함)
+
+3. 수행 항목 체크리스트
+- [ ] 터미널 조작(위치/목록/이동/생성/복사/이름변경/삭제/파일보기/빈파일)
+- [ ] 권한 실습(파일 1개, 디렉토리 1개) 전/후 비교 기록
+- [ ] Docker 설치 및 점검(docker --version, docker info)
+- [ ] Docker 기본 운영(images, ps, logs, stats)
+- [ ] 컨테이너 실행(hello-world, ubuntu 내부 명령)
+- [ ] Dockerfile 기반 커스텀 이미지 빌드/실행
+- [ ] 포트 매핑 접속 증거(브라우저 주소창 포함 또는 curl)
+- [ ] 바인드 마운트 반영 증거
+- [ ] Docker 볼륨 영속성 증거
+- [ ] Git 사용자 정보/기본 브랜치 설정
+- [ ] GitHub/VSCode 연동 증거(민감정보 마스킹)
+
+4. 빠른 검증 가이드(평가자용)
+- 사전 조건: Docker 엔진 실행(OrbStack/Docker Desktop). 리포지토리 클론:
+  ```
+  git clone <repo_url>
+  cd <repo_name>
+  ```
+- 커스텀 이미지 빌드/실행(예: nginx):
+  ```
+  docker build -t <your_image_name>:v1 ./app
+  docker run -d --name <your_container_name> -p 8080:80 \
+    -v $(pwd)/app/html:/usr/share/nginx/html:ro \
+    <your_image_name>:v1
+  ```
+- 확인:
+  - 브라우저 http://localhost:8080 또는
+  - 터미널:
+    ```
+    curl -i http://localhost:8080
+    docker logs <your_container_name>
+    ```
+- 볼륨 테스트(예시):
+  ```
+  docker volume create demo_data
+  docker run --name voltest -d -v demo_data:/data busybox sleep 3600
+  docker exec voltest sh -c 'echo hello > /data/keep.txt && ls -l /data'
+  docker rm -f voltest
+  docker run --name voltest2 -d -v demo_data:/data busybox sleep 3600
+  docker exec voltest2 cat /data/keep.txt
+  ```
+
+5. 검증 방법 및 증거 링크
+- Docker 버전/데몬: 섹션 8 코드블록/출력
+- 운영 명령(images/ps/logs/stats): 섹션 9
+- hello-world/ubuntu 실행: 섹션 10
+- 커스텀 이미지 빌드/실행: 섹션 11
+- 포트 매핑 접속: 섹션 12 (스크린샷 포함)
+- 바인드 마운트/볼륨: 섹션 13
+- Git/GitHub/VSCode 연동: 섹션 14 (스크린샷 포함)
+- 스크린샷 폴더: [docs/screenshots](./docs/screenshots)
+
+6. 터미널 조작 로그
+아래는 실제 입력 명령과 출력 결과입니다. 민감정보는 마스킹했습니다.
+- 현재 위치/목록/이동
+  ```
+  pwd
+  ls -la
+  cd <대상_경로>
+  ```
+  출력:
+  ```
+  <여기에 실제 출력 붙여넣기>
+  ```
+- 생성/복사/이름변경/삭제
+  ```
+  mkdir -p demo/dir
+  touch demo/file.txt
+  cp demo/file.txt demo/file_copy.txt
+  mv demo/file_copy.txt demo/file_renamed.txt
+  rm -f demo/file_renamed.txt
+  ```
+  출력:
+  ```
+  <출력>
+  ```
+- 파일 내용 확인/빈 파일 생성
+  ```
+  echo "sample" > demo/file.txt
+  cat demo/file.txt
+  touch demo/empty.txt
+  ```
+
+7. 권한 실습(파일/디렉토리)
+- 대상: 파일 demo/file.txt, 디렉토리 demo/dir
+- 변경 전 권한
+  ```
+  ls -l demo/file.txt
+  ls -ld demo/dir
+  ```
+  출력:
+  ```
+  <전 상태>
+  ```
+- 권한 변경
+  ```
+  chmod 644 demo/file.txt
+  chmod 755 demo/dir
+  ```
+- 변경 후 권한
+  ```
+  ls -l demo/file.txt
+  ls -ld demo/dir
+  ```
+  출력:
+  ```
+  <후 상태>
+  ```
+- 메모: 644=rw-r--r--, 755=rwxr-xr-x (의미는 섹션 16 참조)
+
+8. Docker 설치 및 기본 점검 로그
+- 버전 확인
+  ```
+  docker --version
+  ```
+  출력:
+  ```
+  <출력>
+  ```
+- 데몬 동작 여부
+  ```
+  docker info
+  ```
+  출력:
+  ```
+  <출력(민감정보 마스킹)>
+  ```
+- 참고: sudo 제한 환경에서는 OrbStack/Docker Desktop으로 엔진 실행(대안: 리모트 Docker context)
+
+9. Docker 기본 운영 명령 로그
+- 이미지/컨테이너 목록
+  ```
+  docker images
+  docker ps
+  docker ps -a
+  ```
+  출력:
+  ```
+  <출력>
+  ```
+- 로그/리소스
+  ```
+  docker logs <컨테이너명 또는 ID>
+  docker stats --no-stream
+  ```
+  출력:
+  ```
+  <출력>
+  ```
+
+10. 컨테이너 실행 실습
+- hello-world
+  ```
+  docker run --rm hello-world
+  ```
+  출력:
+  ```
+  <성공 메시지 전체>
+  ```
+- ubuntu 진입/명령
+  ```
+  docker run -it --name utest ubuntu bash
+  # 컨테이너 내부
+  ls /
+  echo "hi from container" > /tmp/hi.txt
+  cat /tmp/hi.txt
+  exit
+  ```
+- attach/exec 차이 관찰 메모
+  - attach: 메인 프로세스 표준입출력에 붙음(종료 시 컨테이너 종료될 수 있음)
+  - exec: 실행 중 컨테이너에 별도 프로세스를 추가로 실행(컨테이너 수명과 분리)
+
+11. 커스텀 이미지 제작(Dockerfile)
+- 베이스 선택: <예: nginx:alpine>
+- 커스텀 포인트와 목적
+  - 예) 정적 페이지 교체: 조직/과제 소개 페이지 노출
+  - 예) 보안 헤더 추가: NGINX conf 수정
+- 디렉토리 구조
+  ```
+  app/
+    Dockerfile
+    html/
+      index.html
+    conf/
+      default.conf  # 선택
+  ```
+- Dockerfile(예시 템플릿: 필요에 맞게 수정)
+  ```
+  FROM nginx:alpine
+  COPY html/ /usr/share/nginx/html/
+  # COPY conf/default.conf /etc/nginx/conf.d/default.conf
+  EXPOSE 80
+  HEALTHCHECK --interval=30s --timeout=3s CMD wget -qO- http://localhost:80 || exit 1
+  ```
+- 빌드/실행 로그
+  ```
+  docker build -t <your_image_name>:v1 ./app
+  docker run -d --name <your_container_name> -p 8080:80 <your_image_name>:v1
+  docker logs <your_container_name>
+  ```
+  출력:
+  ```
+  <출력>
+  ```
+
+12. 포트 매핑 및 접속 증거
+- 명령:
+  ```
+  docker run -d --name <your_container_name> -p 8080:80 <your_image_name>:v1
+  ```
+- 접속 확인:
+  - 브라우저 주소: http://localhost:8080
+  - 또는 curl:
+    ```
+    curl -i http://localhost:8080
+    ```
+- 스크린샷: 주소창(포트 포함)과 화면이 함께 보이게 캡처
+  - [이미지 링크 1](./docs/screenshots/port_mapping_browser.png)
+  - [이미지 링크 2](./docs/screenshots/curl_output.png)
+
+13. 바인드 마운트 및 볼륨 영속성 검증
+- 바인드 마운트(호스트 변경 반영)
+  - 실행:
+    ```
+    docker run -d --name bindtest -p 8081:80 \
+      -v $(pwd)/app/html:/usr/share/nginx/html:ro \
+      <your_image_name>:v1
+    ```
+  - 호스트 변경 전/후:
+    ```
+    sed -i.bak 's/Original/Updated/g' app/html/index.html
+    curl -s http://localhost:8081 | grep Updated
+    git checkout -- app/html/index.html  # 예: 원복
+    ```
+  - 증거 스크린샷/로그:
+    - [이미지 링크](./docs/screenshots/bind_mount_diff.png)
+- Docker 볼륨(영속 데이터)
+  - 생성/연결/검증:
+    ```
+    docker volume create appdata
+    docker run -d --name volweb -p 8082:80 \
+      -v appdata:/data \
+      <your_image_name>:v1
+    docker exec volweb sh -c 'echo persist > /data/keep.txt && ls -l /data && cat /data/keep.txt'
+    docker rm -f volweb
+    docker run -d --name volweb2 -p 8083:80 -v appdata:/data <your_image_name>:v1
+    docker exec volweb2 cat /data/keep.txt
+    ```
+  - 전/후 비교 로그 첨부:
+    ```
+    docker volume ls
+    docker inspect appdata
+    ```
+
+14. Git 설정 및 GitHub/VSCode 연동 증거
+- Git 사용자/기본 브랜치 설정
+  ```
+  git config --global user.name "<masked_name>"
+  git config --global user.email "<masked_email>"
+  git config --global init.defaultBranch main
+  git config --list --show-origin
+  ```
+  출력:
+  ```
+  <토큰/경로 등 민감정보는 마스킹>
+  ```
+- GitHub 로그인/리모트 연결
+  ```
+  git remote -v
+  git branch -vv
+  git log --oneline -n 5
+  ```
+- VSCode 연동 스크린샷
+  - [이미지 링크](./docs/screenshots/vscode_github_auth.png)
+  - 유의: 토큰/계정 ID 일부 마스킹
+
+15. 트러블슈팅(2건 이상)
+- 사례 1
+  - 문제: <예: docker info가 permission denied>
+  - 가설: <예: Docker 데몬 미기동 또는 context 오설정>
+  - 확인: <예: docker context ls / OrbStack 상태 확인>
+  - 해결/대안: <예: OrbStack 시작, context 전환, 재시도 로그 첨부>
+  - 증거 링크: <섹션/스크린샷 링크>
+- 사례 2
+  - 문제: <예: 포트 충돌(8080 in use)>
+  - 가설: <예: 기존 컨테이너/프로세스 점유>
+  - 확인: <예: docker ps / lsof -i :8080>
+  - 해결/대안: <예: 포트 변경 또는 충돌 컨테이너 제거>
+  - 증거 링크: <링크>
+
+16. 학습 목표 설명(개념 정리)
+- 절대 경로 vs 상대 경로
+  - 절대: 루트(/ 또는 드라이브 문자)부터의 전체 경로. 예: /usr/local/bin
+  - 상대: 현재 디렉토리(.) 기준. 예: ./app/html, ../logs
+- 권한 r/w/x와 755/644
+  - r=4, w=2, x=1; 사용자/그룹/기타 순서로 합산
+  - 755 = (7=rwX)(5=r-x)(5=r-x), 644 = (6=rw-)(4=r--)(4=r--)
+- 포트 매핑이 필요한 이유
+  - 컨테이너 내부 포트(예: 
