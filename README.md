@@ -138,17 +138,38 @@ $ curl http://localhost:8080
 
 ---
 
-### 4-6. Docker Volume 및 볼륨 영속성 검증
-`mysite_data` 라는 이름의 볼륨을 생성하여 `my-web-8080`에 연결한 다음, 호스트에서 직접 `docker cp` 또는 바인드 마운트로 파일을 변경하고, 해당 **컨테이너를 삭제 후 새로 생성(my-web-8081)** 하였을 때에도 변경된 데이터가 볼륨에 의해 유지됨을 증명했습니다.
+### 4-6. Docker 스토리지(Bind Mount & Volume) 검증
 
-1. 볼륨 데이터 수정 (8080 컨테이너 도중 변경)
+#### 4-6-1. 바인드 마운트(Bind Mount) 호스트 변경 실시간 반영 증거
+호스트의 특정 디렉토리(`~/dev-workstation/practice`)를 컨테이너 내부(`/usr/share/nginx/html`)로 덮어씌워 마운트했습니다. 명령어 실행 후, 호스트에서 파일을 변경하자마자 컨테이너(웹 응답)에도 즉시 반영됨을 확인했습니다.
+
+```bash
+$ echo 'Bind Mount Before' > ~/dev-workstation/practice/bind_test.html
+$ docker run -d -p 8082:80 -v ~/dev-workstation/practice:/usr/share/nginx/html --name bind-test my-web:1.0
+
+# (호스트 파일 변경 전 확인)
+$ curl http://localhost:8082/bind_test.html
+Bind Mount Before
+
+# (호스트 파일 내용 변경)
+$ echo 'Bind Mount After' > ~/dev-workstation/practice/bind_test.html
+
+# (호스트 파일 변경 후 웹서버 실시간 반영 확인)
+$ curl http://localhost:8082/bind_test.html
+Bind Mount After
+```
+
+#### 4-6-2. 볼륨(Volume) 영속성(Persistence) 증거
+`mysite_data` 라는 이름의 볼륨을 생성하여 `my-web-8080`에 연결한 다음 컨테이너 데이터를 수정한 뒤, 해당 **컨테이너를 완전히 지우고 새로 생성(`my-web-8081`)** 하였을 때에도 변경된 데이터가 동일 볼륨에 의해 무사히 유지됨을 증명했습니다.
+
+1. 볼륨 데이터 접속 및 수정 (8080 컨테이너 도중 데이터 덮어쓰기)
 ```bash
 $ docker cp practice/new_index.html my-web-8080:/usr/share/nginx/html/index.html
 $ curl http://localhost:8080
 Updated by Volume Mount
 ```
 
-2. 8080 컨테이너 완전 삭제 후 **새로운 8081 포트 컨테이너**에 동일 볼륨 마운트 증명
+2. 8080 컨테이너 삭제 후 **새로운 8081 포트 컨테이너**에 동일 볼륨 마운트 및 영속성 증명
 ```bash
 $ docker rm -f my-web-8080
 my-web-8080
@@ -241,3 +262,8 @@ $ git push -u origin main
 - **가설 수립**: 명령이 에러조차 뱉지 않고 무한 대기하는 것은 '서버 데몬 소켓' 자체가 열려 있지 않아 소켓 연결 요청을 계속 재시도 중이기 때문이라 여겼고, 보안상 sudo 커맨드를 막아두어 기존의 `sudo systemctl start docker` 같은 정석적인 해결법은 통하지 않을 것이라 가정했습니다.
 - **확인**: 터미널에서 시간 제한 없이 기다리거나 `docker info`를 쳐서 한참 뒤 타임아웃 에러가 발생하는 것을 관찰해 데몬이 다운되어 있음을 입증했습니다.
 - **조치 해결**: 시스템 루트 권한(Root) 환경을 침범하지 않고도 가상화 데몬을 제공해주는 툴인 **OrbStack**을 활용하는 대안을 채택했습니다. OrbStack 앱 본체를 윈도우/맥 GUI 환경에서 켜서 사용자 권한으로 백그라운드 구동을 인가시킨 뒤 터미널 창을 재가동하니, `docker info` 가 즉각 떨어지며 데몬 통신이 복구됨을 증명해냈습니다.
+
+**11. 컨테이너 종료 / 유지(attach vs exec 등)의 차이를 관찰하고 간단히 정리?**
+- 컨테이너는 내부에 구동 중인 핵심 프로세스(PID가 1인 동작)가 종료되면 컨테이너 자체도 멈춥니다(Exited). 이 원리에 따라 진입 명령어 사용 시 차이가 갈립니다.
+- **`attach`**: 컨테이너가 처음 켜질 때 실행 중인 "바로 그 1번 프로세스"의 입출력/로그 터미널(Standard I/O) 화면에 내 현재 터미널을 직결(Attach)로 붙이는 명령입니다. 따라서 여기서 `Ctrl+C`나 `exit`를 누르면 그 1번 메인 프로세스가 종료 신호를 받아 죽어버리므로, **컨테이너 전체가 중지(Stop)** 되는 현상으로 이어집니다.
+- **`exec` (-it)**: 이미 띄워져서 잘 돌아가고 있는 메인 프로세스 뒷단에, 별도 문을 열고 들어가 "새로운 서브 쉘 프로세스(예: `/bin/bash` 나 `sh` 등)"를 추가로 가동해 진입하는 명령입니다. 이 상태에서 아무리 이것저것 하다가 `exit`를 쳐서 나가더라도, '내가 불러들인 서브 쉘 프로세스'가 종료될 뿐, 1번 프로세스(서버 구동 등)에는 절대 영향을 주지 않아 **컨테이너는 백그라운드에서 끄떡없이 유지**됩니다.
