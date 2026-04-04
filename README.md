@@ -170,12 +170,8 @@ Date:   Sat Apr 4 19:23:33 2026 +0900
     Initial commit
 ```
 
-## 5. 남은 작업 안내 (사용자 제출 내용)
-> **중요**  
-> 1. 방금 올리신 스크린샷 파일을 현재 폴더(`~/dev-workstation/`) 안에 **`screenshot.png`** 라는 이름으로 저장해 주세요.  
-> 2. VSCode와 GitHub 연동 과정을 통해 원격 Repository에 Push 하시면 모든 과제가 종료됩니다!
 
-## 6. 트러블슈팅
+## 5. 트러블슈팅
 1. **OrbStack 미실행에 따른 데몬 연결 실패**
    - 문제: Terminal 등에서 Docker info 혹은 Docker run 명령을 수행 시 응답 없이 무한 대기
    - 원인: 데몬 서비스(Docker Engine)가 현재 구동되지 않아 연결 타임아웃 증상 발생
