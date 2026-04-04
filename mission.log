@@ -1,0 +1,41 @@
+=== System & Docker Log ===
+$ docker --version
+Docker version 28.5.2, build ecc6942
+
+$ docker info | grep -E 'Server Version|Operating System|OSType|Architecture|Name'
+ Server Version: 28.5.2
+ Operating System: OrbStack
+ OSType: linux
+ Architecture: x86_64
+ Name: orbstack
+
+$ git --version
+git version 2.53.0
+
+=== Terminal Basics Log ===
+$ pwd
+/Users/ldryong10097422/dev-workstation/practice
+$ touch file1.txt
+$ echo 'Hello' > file1.txt
+$ cp file1.txt file2.txt
+$ mkdir dir1
+$ mv file2.txt dir1/renamed.txt
+$ rm file1.txt
+$ ls -la
+total 0
+drwxr-xr-x  3 ldryong10097422  ldryong10097422   96 Apr  4 19:16 .
+drwxr-xr-x  5 ldryong10097422  ldryong10097422  160 Apr  4 19:16 ..
+drwxr-xr-x  3 ldryong10097422  ldryong10097422   96 Apr  4 19:16 dir1
+
+=== Permission Log ===
+$ ls -la dir1/renamed.txt
+-rw-r--r--  1 ldryong10097422  ldryong10097422  6 Apr  4 19:16 dir1/renamed.txt
+$ chmod 777 dir1/renamed.txt
+$ ls -la dir1/renamed.txt
+-rwxrwxrwx  1 ldryong10097422  ldryong10097422  6 Apr  4 19:16 dir1/renamed.txt
+$ ls -ld dir1
+drwxr-xr-x  3 ldryong10097422  ldryong10097422  96 Apr  4 19:16 dir1
+$ chmod 755 dir1
+$ ls -ld dir1
+drwxr-xr-x  3 ldryong10097422  ldryong10097422  96 Apr  4 19:16 dir1
+

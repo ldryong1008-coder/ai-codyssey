@@ -1,0 +1,147 @@
+=== Docker Basics Log ===
+$ docker images
+REPOSITORY   TAG       IMAGE ID   CREATED   SIZE
+$ docker run hello-world
+
+Hello from Docker!
+This message shows that your installation appears to be working correctly.
+
+To generate this message, Docker took the following steps:
+ 1. The Docker client contacted the Docker daemon.
+ 2. The Docker daemon pulled the "hello-world" image from the Docker Hub.
+    (amd64)
+ 3. The Docker daemon created a new container from that image which runs the
+    executable that produces the output you are currently reading.
+ 4. The Docker daemon streamed that output to the Docker client, which sent it
+    to your terminal.
+
+To try something more ambitious, you can run an Ubuntu container with:
+ $ docker run -it ubuntu bash
+
+Share images, automate workflows, and more with a free Docker ID:
+ https://hub.docker.com/
+
+For more examples and ideas, visit:
+ https://docs.docker.com/get-started/
+
+$ docker run ubuntu
+PRETTY_NAME="Ubuntu 24.04.4 LTS"
+=== Custom Image Build ===
+$ docker build -t my-web:1.0 .
+#0 building with "orbstack" instance using docker driver
+
+#1 [internal] load build definition from Dockerfile
+#1 transferring dockerfile:
+#1 transferring dockerfile: 229B done
+#1 DONE 0.2s
+
+#2 [internal] load metadata for docker.io/library/nginx:alpine
+#2 DONE 2.7s
+
+#3 [internal] load .dockerignore
+#3 transferring context: 2B done
+#3 DONE 0.2s
+
+#4 [1/2] FROM docker.io/library/nginx:alpine@sha256:e7257f1ef28ba17cf7c248cb8ccf6f0c6e0228ab9c315c152f9c203cd34cf6d1
+#4 resolve docker.io/library/nginx:alpine@sha256:e7257f1ef28ba17cf7c248cb8ccf6f0c6e0228ab9c315c152f9c203cd34cf6d1
+#4 ...
+
+#5 [internal] load build context
+#5 transferring context: 343B done
+#5 DONE 0.2s
+
+#4 [1/2] FROM docker.io/library/nginx:alpine@sha256:e7257f1ef28ba17cf7c248cb8ccf6f0c6e0228ab9c315c152f9c203cd34cf6d1
+#4 resolve docker.io/library/nginx:alpine@sha256:e7257f1ef28ba17cf7c248cb8ccf6f0c6e0228ab9c315c152f9c203cd34cf6d1 0.2s done
+#4 sha256:7e89aa6cabfc80f566b1b77b981f4bb98413bd2d513ca9a30f63fe58b4af6903 2.50kB / 2.50kB done
+#4 sha256:e7257f1ef28ba17cf7c248cb8ccf6f0c6e0228ab9c315c152f9c203cd34cf6d1 10.33kB / 10.33kB done
+#4 sha256:d5030d429039a823bef4164df2fad7a0defb8d00c98c1136aec06701871197c2 12.32kB / 12.32kB done
+#4 sha256:8892f80f46a05d59a4cde3bcbb1dd26ed2441d4214870a4a7b318eaa476a0a54 0B / 1.87MB 0.1s
+#4 sha256:589002ba0eaed121a1dbf42f6648f29e5be55d5c8a6ee0f8eaa0285cc21ac153 0B / 3.86MB 0.1s
+#4 sha256:91d1c9c22f2c631288354fadb2decc448ce151d7a197c167b206588e09dcd50a 0B / 626B 0.1s
+#4 sha256:91d1c9c22f2c631288354fadb2decc448ce151d7a197c167b206588e09dcd50a 626B / 626B 0.5s done
+#4 sha256:cf1159c696ee2a72b85634360dbada071db61bceaad253db7fda65c45a58414c 0B / 953B 0.6s
+#4 sha256:589002ba0eaed121a1dbf42f6648f29e5be55d5c8a6ee0f8eaa0285cc21ac153 3.86MB / 3.86MB 0.8s done
+#4 extracting sha256:589002ba0eaed121a1dbf42f6648f29e5be55d5c8a6ee0f8eaa0285cc21ac153 0.1s done
+#4 sha256:8892f80f46a05d59a4cde3bcbb1dd26ed2441d4214870a4a7b318eaa476a0a54 1.87MB / 1.87MB 0.9s done
+#4 sha256:3f4ad4352d4f91018e2b4910b9db24c08e70192c3b75d0d6fff0120c838aa0bb 0B / 402B 1.0s
+#4 extracting sha256:8892f80f46a05d59a4cde3bcbb1dd26ed2441d4214870a4a7b318eaa476a0a54
+#4 sha256:c2bd5ab177271dd59f19a46c214b1327f5c428cd075437ec0155ae71d0cdadc1 0B / 1.21kB 1.0s
+#4 sha256:cf1159c696ee2a72b85634360dbada071db61bceaad253db7fda65c45a58414c 953B / 953B 1.0s done
+#4 extracting sha256:8892f80f46a05d59a4cde3bcbb1dd26ed2441d4214870a4a7b318eaa476a0a54 0.1s done
+#4 sha256:4d9d41f3822d171ccc5f2cdfd75ad846ac4c7ed1cd36fb998fe2c0ce4501647b 0B / 1.40kB 1.1s
+#4 extracting sha256:91d1c9c22f2c631288354fadb2decc448ce151d7a197c167b206588e09dcd50a
+#4 sha256:3f4ad4352d4f91018e2b4910b9db24c08e70192c3b75d0d6fff0120c838aa0bb 402B / 402B 1.3s done
+#4 extracting sha256:91d1c9c22f2c631288354fadb2decc448ce151d7a197c167b206588e09dcd50a done
+#4 extracting sha256:cf1159c696ee2a72b85634360dbada071db61bceaad253db7fda65c45a58414c done
+#4 extracting sha256:3f4ad4352d4f91018e2b4910b9db24c08e70192c3b75d0d6fff0120c838aa0bb done
+#4 sha256:3370263bc02adcf5c4f51831d2bf1d54dbf9a6a80b0bf32c5c9b9400630eaa08 0B / 20.25MB 1.4s
+#4 extracting sha256:c2bd5ab177271dd59f19a46c214b1327f5c428cd075437ec0155ae71d0cdadc1
+#4 sha256:c2bd5ab177271dd59f19a46c214b1327f5c428cd075437ec0155ae71d0cdadc1 1.21kB / 1.21kB 1.5s done
+#4 sha256:4d9d41f3822d171ccc5f2cdfd75ad846ac4c7ed1cd36fb998fe2c0ce4501647b 1.40kB / 1.40kB 1.6s done
+#4 extracting sha256:c2bd5ab177271dd59f19a46c214b1327f5c428cd075437ec0155ae71d0cdadc1 done
+#4 extracting sha256:4d9d41f3822d171ccc5f2cdfd75ad846ac4c7ed1cd36fb998fe2c0ce4501647b done
+#4 sha256:3370263bc02adcf5c4f51831d2bf1d54dbf9a6a80b0bf32c5c9b9400630eaa08 1.05MB / 20.25MB 1.8s
+#4 sha256:3370263bc02adcf5c4f51831d2bf1d54dbf9a6a80b0bf32c5c9b9400630eaa08 7.34MB / 20.25MB 1.9s
+#4 sha256:3370263bc02adcf5c4f51831d2bf1d54dbf9a6a80b0bf32c5c9b9400630eaa08 16.78MB / 20.25MB 2.0s
+#4 extracting sha256:3370263bc02adcf5c4f51831d2bf1d54dbf9a6a80b0bf32c5c9b9400630eaa08
+#4 sha256:3370263bc02adcf5c4f51831d2bf1d54dbf9a6a80b0bf32c5c9b9400630eaa08 20.25MB / 20.25MB 2.1s done
+#4 extracting sha256:3370263bc02adcf5c4f51831d2bf1d54dbf9a6a80b0bf32c5c9b9400630eaa08 0.4s done
+#4 DONE 3.7s
+
+#6 [2/2] COPY src/ /usr/share/nginx/html/
+#6 DONE 0.2s
+
+#7 exporting to image
+#7 exporting layers 0.1s done
+#7 writing image sha256:082528a8937a96ed2800779e54e2e0b83291aad771d1c9c713de268a41df6277 done
+#7 naming to docker.io/library/my-web:1.0 0.0s done
+#7 DONE 0.2s
+=== Port Mapping & Volume Test ===
+$ docker volume create mysite_data
+mysite_data
+$ docker run -d -p 8080:80 -v mysite_data:/usr/share/nginx/html --name my-web-8080 my-web:1.0
+6126324e5023a6f459ef9ffdffc5d3993913096f7edb7f4421c34fe82aebba53
+$ curl http://localhost:8080
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>My Dev Workstation</title>
+</head>
+<body>
+  <h1>Hello from NGINX on Docker!</h1>
+  <p>이 페이지는 개발 워크스테이션 미션을 위한 커스텀 컨테이너 페이지입니다.</p>
+</body>
+</html>
+
+$ echo 'Updated by Volume Mount' > practice/new_index.html
+$ docker cp practice/new_index.html my-web-8080:/usr/share/nginx/html/index.html
+$ curl http://localhost:8080
+Updated by Volume Mount
+
+$ docker rm -f my-web-8080
+my-web-8080
+$ docker run -d -p 8081:80 -v mysite_data:/usr/share/nginx/html --name my-web-8081 my-web:1.0
+ad6cdd93c1c84749e937ede2c3bd76892112c5f4e8808b1d947ab21a64d9e2d7
+$ curl http://localhost:8081
+Updated by Volume Mount
+
+$ docker rm -f my-web-8081
+my-web-8081
+=== Git Log ===
+$ git init
+hint: Using 'master' as the name for the initial branch. This default branch name
+hint: will change to "main" in Git 3.0. To configure the initial branch name
+hint: to use in all of your new repositories, which will suppress this warning,
+hint: call:
+hint:
+hint: 	git config --global init.defaultBranch <name>
+hint:
+hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+hint: 'development'. The just-created branch can be renamed via this command:
+hint:
+hint: 	git branch -m <name>
+hint:
+hint: Disable this message with "git config set advice.defaultBranchName false"
+Initialized empty Git repository in /Users/ldryong10097422/dev-workstation/.git/
+$ git add .
